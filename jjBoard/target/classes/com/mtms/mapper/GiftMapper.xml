@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="com.mtms.mapper.GiftMapper">
+
+	<!-- 기프티콘 등록하기 -->
+	<insert id="insertSelectKey">
+	  	<selectKey keyProperty="giftNo" order="BEFORE" resultType="int">
+	  		SELECT seq_gift.nextval FROM dual
+	  	</selectKey>
+	  		INSERT INTO gift (giftNo, giftName, giftPrice, giftSet) 
+	  			   VALUES(#{giftNo}, #{giftName}, #{giftPrice}, #{giftSet})
+	</insert>
+	
+	<!-- 기프티콘 조회 -->
+	<select id="getList" resultType="com.mtms.domain.GiftVO">
+		<![CDATA[SELECT * FROM gift WHERE giftNo > 0 AND giftDeleteChk = 0 ORDER BY giftNo DESC]]>
+	</select>
+	
+	<!-- 기프티콘 상세보기 -->
+	<select id="read" resultType="com.mtms.domain.GiftVO">
+		SELECT * FROM gift WHERE giftNo = #{giftNo}
+	</select>
+	
+	<!-- 기프티콘 수정 -->
+	<update id="update">
+		UPDATE gift
+		SET giftName = #{giftName},
+			giftPrice = #{giftPrice}
+		WHERE giftNo = #{giftNo}
+	</update>
+	
+	<!-- 기프티콘 삭제 -->
+	<update id="deleteChk">
+		UPDATE gift
+		SET giftDeleteChk = 1
+		WHERE giftNo = #{giftNo}			
+	</update>
+	
+	<!-- 기프티콘 결제완료 -->
+	<select id="pay" resultType="com.mtms.domain.GiftVO">
+		SELECT * FROM gift WHERE giftNo = #{giftNo} 
+	</select>
+	
+	</mapper>

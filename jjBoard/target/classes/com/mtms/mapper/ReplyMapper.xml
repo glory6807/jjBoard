@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="com.mtms.mapper.ReplyMapper">
+	
+	<!-- 댓글 갯수 counting -->
+	<select id="getCountByNoticeNo" resultType="int">
+  		SELECT count(replyNo) FROM noticeReply WHERE noticeNo = #{noticeNo}
+  	</select>
+	
+	<!-- 댓글 조회 -->
+	<select id="getListWithPaging" resultType="com.mtms.domain.ReplyVO">
+  	<![CDATA[ SELECT replyNo, noticeNo, replyContent, replyer, replyDate, deleteChk, noticeOriginNo, replyGroupOrd, replyDepth, replyPw
+  				FROM (SELECT rownum rn, X.* FROM 
+  				(SELECT replyNo, noticeNo, replyContent, replyer, replyDate, deleteChk, noticeOriginNo, replyGroupOrd, replyDepth, replyPw
+  					  FROM noticeReply  WHERE noticeNo = #{noticeNo} ORDER BY replyDate DESC)
+  					  X WHERE  rownum <= #{cri.pageNum} * #{cri.amount})
+  			   WHERE rn > (#{cri.pageNum} -1) * #{cri.amount} ]]>
+  	</select>
+	
+	<!-- 댓글 등록 -->
+	<insert id="insert" >
+  		INSERT INTO noticeReply(replyNo, noticeNo, replyContent, replyer, replyPw) VALUES(seq_reply.nextval, #{noticeNo}, #{replyContent}, #{replyer}, #{replyPw})
+  	</insert> 
+    
+    <!-- 해당 번호 댓글 가져오기 -->
+    <select id="read" resultType="com.mtms.domain.ReplyVO">
+  	select * from noticeReply where replyNo= #{replyNo} 
+  	</select>
+    
+	<!-- 댓글 삭제 -->
+ 	<delete id="delete">
+  		DELETE FROM noticeReply WHERE replyNo = #{replyeNo} 
+  	</delete> 
+  	
+  	<!-- 댓글 수정 -->
+   	<update id="update">
+  		UPDATE noticeReply
+  		   SET replyContent = #{replyContent}
+  		 WHERE replyNo = #{replyNo}
+  	</update>
+  	
+  	<select id="getPassword" resultType="String">
+  		SELECT replyPw FROM noticeReply WHERE replyNo = #{replyNo}
+  	</select>
+	
+</mapper>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="com.mtms.mapper.NoticeAttachMapper">
+
+	<!-- 사진 파일 등록하기 -->
+	<insert id="insert">
+		INSERT INTO noticeAttach (uuid, uploadpath, filename, filetype, noticeNo) 
+		VALUES (#{uuid}, #{uploadPath}, #{fileName}, #{fileType}, #{noticeNo})
+	</insert>
+
+	<!-- 사진 하나 삭제 -->
+	<delete id="delete">
+		DELETE FROM noticeAttach WHERE uuid = #{uuid}
+	</delete>
+
+	<!-- 해당 게시물의 사진 조회 -->
+	<select id="findByNoticeNo" resultType="com.mtms.domain.NoticeAttachVO">
+		SELECT * FROM noticeAttach WHERE noticeNo = #{noticeNo}
+	</select>
+	
+	<!-- 해당 게시물의 사진 모두 삭제 -->
+	<delete id="deleteAll">
+		DELETE noticeAttach WHERE noticeNo = #{noticeNo}
+	</delete>
+
+	<select id="getOldFiles" resultType="com.mtms.domain.NoticeAttachVO">
+		SELECT * FROM noticeAttach WHERE uploadpath = to_char(sysdate-1, 'yyyy\MM\dd')
+	</select>
+	
+</mapper>

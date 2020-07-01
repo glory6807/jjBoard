@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="com.mtms.mapper.NoticeMapper">
+	
+	<!-- 공지사항 등록 -->
+	<insert id="insertSelectKey">				
+		<selectKey keyProperty="noticeNo" order="BEFORE" resultType="int">
+  		select seq_notice.nextval from dual
+  		</selectKey>
+		INSERT INTO notice (noticeNo, noticeTitle, noticeContent, writer, noticePw, originNo, groupOrd, noticeDepth, noticeDeleteChk) 
+			   VALUES(#{noticeNo}, #{noticeTitle}, #{noticeContent}, #{writer}, #{noticePw}, seq_notice.currval, 0, 0, 0)
+	</insert>
+	
+	<!-- 쿼리 보관 (검색) -->
+	<sql id="criteria">
+	<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+	 	<foreach collection="typeArr" item="type">
+	 		<trim prefix="OR">
+	 		<choose>
+	 			<when test="type == 'T'.toString()">
+	 				noticeTitle LIKE '%'||#{keyword}||'%'
+	 			</when>
+	 			<when test="type == 'C'.toString()">
+	 				noticeContent LIKE '%'||#{keyword}||'%'
+	 			</when>	 			
+	 		</choose>
+	 		</trim>
+	 	</foreach>
+	 </trim>
+	</sql>
+ 	
+ 	<!-- 엑셀 전체 다운로드 -->
+ 	<select id="getListForExcel" resultType="com.mtms.domain.NoticeVO">
+		SELECT * FROM notice WHERE (noticeTitle LIKE '%'||#{keyword}||'%' or noticeContent LIKE '%'||#{keyword}||'%') ORDER BY originNo desc, groupOrd asc
+	</select>   
+	
+	<!-- 공지사항 조회 겸 엑셀 페이지 다운로드 -->
+	<select id="getListWithPaging" resultType="com.mtms.domain.NoticeVO">
+		<![CDATA[SELECT * 
+  					FROM (SELECT rownum rn, noticeNo, noticeTitle, noticeContent, writer, noticeView, noticeDate, originNo, groupOrd, noticeDepth, replyCnt, attachChk
+  				   		   FROM ( SELECT * 
+								 	FROM notice 
+               						WHERE noticeNo > 0 ORDER BY originNo desc, groupOrd asc) 
+               			   WHERE]]>		
+								 <include refid="criteria"></include>
+  							<![CDATA[ rownum <=  #{pageNum} * #{amount}) 
+               	   WHERE rn > (#{pageNum}-1) * #{amount}]]>
+	</select> 
+	
+	<!-- 공지사항 상세보기 -->
+	<select id="read" resultType="com.mtms.domain.NoticeVO">
+		SELECT * FROM notice WHERE noticeNo = #{noticeNo}
+	</select>
+	
+	<!-- 공지사항 수정 -->
+	<update id="update">
+		UPDATE notice
+		SET noticeTitle = #{noticeTitle},
+			noticeContent = #{noticeContent},
+			noticePw = #{noticePw}
+		WHERE noticeNo = #{noticeNo}
+	</update>
+	
+	<!-- 공지사항 답글 달려있을 때 삭제 -->	
+	<update id="updateOrigin">
+		UPDATE notice
+		SET noticeTitle = '[요청에 의해 삭제된 게시글입니다]',
+			noticeContent = '[요청에 의해 삭제된 게시글입니다]',
+			writer = 'Unknown',
+			noticeDeleteChk = 1
+		WHERE noticeNo = #{noticeNo}
+	</update>
+	
+	<!-- 공지사항 삭제 -->
+	<delete id="delete">
+		DELETE FROM notice WHERE noticeNo = #{noticeNo}
+	</delete>
+
+	<!-- 공지사항 게시글 총 갯수 -->
+	<select id="getTotalCount" resultType="int">
+		<![CDATA[SELECT count(*) FROM notice WHERE]]> 
+			<include refid="criteria"></include>
+		<![CDATA[noticeNo > 0 ]]>		
+	</select>
+	
+	<!-- 공지사항 조회수 -->
+	<update id="viewUpdate">
+		UPDATE notice
+		SET noticeView = noticeView + 1
+		WHERE noticeNo = #{noticeNo}
+	</update>
+	
+ 	<!-- 답글 작성시 그룹번호 수정(증가) -->
+	<update id="updateRe">
+		UPDATE notice
+		SET groupOrd = groupOrd + 1
+		WHERE originNo = #{originNo} AND groupOrd > #{groupOrd}
+	</update>
+	
+	<!-- 답글 등록 -->
+	<insert id="insertSelectKeyRe">
+		INSERT INTO notice (noticeNo, noticeTitle, noticeContent, writer, noticePw, originNo, groupOrd, noticeDepth, noticeDeleteChk) 
+			   VALUES (seq_notice.nextval, #{noticeTitle}, #{noticeContent}, #{writer}, #{noticePw}, #{originNo}, #{groupOrd}+1, #{noticeDepth}+1, 0)
+	</insert>
+	
+	<!-- 게시글에 달린 답글 수  -->
+ 	<select id="getNoticeRe" resultType="int">
+		SELECT count(*) FROM notice WHERE originNo = #{noticeNo} AND noticeDepth > 0
+	</select>
+	
+	<!-- 해당 게시글의 댓글 갯수 가져오기 -->
+	<select id="getTotalReply" resultType="int">
+		SELECT replyCnt FROM notice WHERE noticeNo = #{noticeNo}
+	</select>
+		
+	<!-- 댓글 갯수 추가 -->
+	<update id="updateReplyCnt">
+  		UPDATE notice 
+  		SET replyCnt = replyCnt + #{amount} 
+  		WHERE noticeNo = #{noticeNo}
+  	</update>
+  	
+  	<insert id="insertAttachChk">
+  		UPDATE notice 
+  		SET attachChk = 1 
+  		WHERE noticeNo = #{noticeNo}
+  	</insert>
+  	
+  	
+</mapper>
